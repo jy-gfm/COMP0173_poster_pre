@@ -20,8 +20,8 @@ data.rar
 Haerbing_Dataset/
 excluded_mismatched_tiles/
 Haerbing_processed/
-Haerbing_ground_truth/
-Haerbing_ground_truth.tar
+Haerbing_ground_truth*/
+Haerbing_ground_truth*.tar
 *.hdf5
 
 # Notebook checkpoints
