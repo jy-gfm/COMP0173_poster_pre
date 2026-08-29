@@ -39,6 +39,17 @@ deterministic hash, so all dates of a given position land in the same
 split -- this avoids leaking near-identical same-location, different-date
 tiles across splits.
 
+Tile T52TDT is excluded entirely: it only has one acquisition date, so
+100% of its 324 positions (~20% of the dataset) would fall back to a
+single-date NDVI threshold instead of the multi-date persistence check --
+it accounts for 324/377 (86%) of all single-date-fallback positions in
+the raw dataset. Dropping it removes most of the weaker-labelled subset
+in one well-targeted cut, leaving a dataset dominated by the genuinely
+multi-date-confirmed labels that are this method's actual advantage over
+the original paper's single-date k-means (remaining single-date share
+drops from 23% to ~4%). See poster_notes.md section 4 for the full
+numbers behind this decision.
+
 Run with: venv/bin/python3 generate-haerbing-ground-truth.py
 """
 import os
@@ -53,6 +64,10 @@ PROCESSED_DIR = "Haerbing_processed"
 OUTPUT_DIR = "Haerbing_ground_truth"
 FOREST_NDVI_THRESHOLD = 0.6
 SPLIT_BOUNDARIES = {"training": 70, "validation": 85, "test": 100}  # cumulative %
+
+# T52TDT has only one acquisition date -- exclude it entirely so the
+# multi-date persistence check applies uniformly (see module docstring).
+EXCLUDED_TILE_IDS = {"T52TDT"}
 
 # Removes connected forest regions narrower than ~2*radius+1 pixels (10m/px,
 # so radius=2 drops anything narrower than ~50m) -- shelterbelt rows are
@@ -79,7 +94,7 @@ def assign_split(tile_id, row, col):
 def group_positions(manifest):
     positions = defaultdict(list)
     for record in manifest:
-        if not record["kept"]:
+        if not record["kept"] or record["tile_id"] in EXCLUDED_TILE_IDS:
             continue
         key = (record["tile_id"], record["row"], record["col"])
         positions[key].append(record["date"])
