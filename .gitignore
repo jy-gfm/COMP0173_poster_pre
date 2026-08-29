@@ -1,0 +1,19 @@
+# Python environment
+venv/
+__pycache__/
+*.pyc
+
+# Editor
+.vscode/
+
+# OS junk
+.DS_Store
+.Rhistory
+
+# Raw dataset (available from Zenodo links in README; keep on Google Drive for Colab)
+Amazon Forest Dataset/
+dataset/
+data.rar
+
+# Notebook checkpoints
+.ipynb_checkpoints/

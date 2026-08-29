@@ -3,7 +3,7 @@ tensorflow
 keras
 rioxarray
 rasterio
-PIL
+pillow
 segmentation-models
 rarfile
 pyunpack
@@ -11,4 +11,4 @@ patool
 matplotlib
 pandas
 pathlib
-sklearn
+scikit-learn
