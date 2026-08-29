@@ -15,5 +15,14 @@ Amazon Forest Dataset/
 dataset/
 data.rar
 
+# Harbin phase-2 dataset (raw Sentinel-2 scenes + generated tiles/labels;
+# keep on Google Drive for Colab, not in git)
+Haerbing_Dataset/
+excluded_mismatched_tiles/
+Haerbing_processed/
+Haerbing_ground_truth/
+Haerbing_ground_truth.tar
+*.hdf5
+
 # Notebook checkpoints
 .ipynb_checkpoints/
