@@ -61,11 +61,15 @@ TARGET_TILES = {"T52TCT", "T52UCU", "T52UDU", "T52TDT"}
 DATE_START = "2025-09-01T00:00:00.000Z"
 DATE_END = "2025-12-01T00:00:00.000Z"
 
-# Same rationale as the original download: keep scenes usable after the
-# SCL-based cloud/nodata tile filter in preprocess-haerbing-sentinel2-data.py
-# (MAX_BAD_FRACTION=0.10) without discarding so many candidate scenes up
-# front that too few dates survive per tile.
-MAX_CLOUD_COVER_PCT = 30
+# Scene-level cloud cover, tightened from an initial 30% after discovering
+# the exhaustive multi-satellite/multi-orbit revisit coverage over a full
+# 3-month window returns 101 scenes (~100GB) even before this filter does
+# much -- cloud cover isn't actually the main volume driver here (even
+# <3% cloud still leaves 51 scenes), but tightening it to 10% trims about
+# 30% of the download/preprocessing time for comparatively little lost
+# coverage. Confirmed via direct catalogue queries before changing this:
+# <30%->101, <20%->91, <15%->84, <10%->72, <5%->59, <3%->51 scenes.
+MAX_CLOUD_COVER_PCT = 10
 
 IDENTITY_URL = "https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token"
 CATALOGUE_URL = "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
