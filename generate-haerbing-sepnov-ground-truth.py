@@ -33,14 +33,19 @@ June-Aug:
      "distinct kept dates per tile" summary -- add any single-date tile's
      ID to EXCLUDED_TILE_IDS below if so, mirroring the June-Aug decision.
 
-  2. FOREST_NDVI_THRESHOLD=0.6 was chosen by inspecting June-Aug
-     (peak-growing-season) NDVI. Autumn NDVI is systematically lower for
-     deciduous/mixed forest and especially for senescing cropland, so 0.6
-     may mislabel real forest as non-forest here. Run
-     show_image_mask_pairs() (from code_phase2_harbin_sepnov.ipynb) on a
-     sample of this output before training -- if masks look sparse
-     relative to visibly green regions in the image, lower the threshold
-     and re-run.
+  2. FOREST_NDVI_THRESHOLD was originally 0.6, copied from June-Aug
+     (peak-growing-season) NDVI. A first run at 0.6 confirmed the risk
+     flagged above: mean forest fraction came out at 0.089, vs. 0.545 for
+     the June-Aug filtered dataset -- a ~6x drop, well below the 0.6
+     threshold's summer calibration. This isn't evidence that forest
+     actually shrank; autumn NDVI is systematically lower for
+     deciduous/mixed forest too, not just senescing cropland, so the
+     persistence method's AND-across-dates condition was failing on real
+     forest pixels at their later (lower-NDVI) dates. Lowered to 0.4 to
+     compensate. Still worth running show_image_mask_pairs() (from
+     code_phase2_harbin_sepnov.ipynb) on a sample of this output before
+     training -- if masks still look sparse relative to visibly green
+     regions in the image, lower further.
 
 Run with: venv/bin/python3 generate-haerbing-sepnov-ground-truth.py
 """
@@ -54,7 +59,7 @@ from skimage.morphology import binary_opening, disk
 
 PROCESSED_DIR = "Haerbing_processed_sepnov"
 OUTPUT_DIR = "Haerbing_ground_truth_sepnov"
-FOREST_NDVI_THRESHOLD = 0.6
+FOREST_NDVI_THRESHOLD = 0.4  # lowered from 0.6 -- see docstring point 2
 SPLIT_BOUNDARIES = {"training": 70, "validation": 85, "test": 100}  # cumulative %
 
 # Empty by default -- see docstring point 1. Fill in after checking
