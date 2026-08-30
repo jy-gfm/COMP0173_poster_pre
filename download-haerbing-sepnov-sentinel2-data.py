@@ -96,14 +96,27 @@ def get_access_token():
 
 
 def search_products():
-    """Query the OData catalogue for Sentinel-2 L2A scenes in the date
-    window, then keep only results over the target MGRS tiles (products
-    are named e.g. S2B_MSIL2A_..._T52TCT_..., so a substring match on the
-    Name field is enough -- the API itself doesn't filter by MGRS tile
-    directly)."""
+    """Query the OData catalogue for Sentinel-2 L2A scenes over the target
+    MGRS tiles in the date window (products are named e.g.
+    S2B_MSIL2A_..._T52TCT_..., so a substring match on the Name field
+    identifies the tile).
+
+    The tile filter MUST be applied server-side (in $filter), not just by
+    filtering the returned products client-side -- CDSE's OData API caps
+    how many results deep pagination can reach (observed cap: exactly
+    10100 = 101 pages of $top=100), and results are date-ordered globally.
+    Without a server-side tile filter, "candidates" here means every
+    Sentinel-2 L2A scene on Earth in the date window: the pagination cap
+    gets hit within the first day or two of global scenes, long before a
+    date-ordered global stream would reach Harbin's specific tiles at all
+    -- silently returning 0 matches despite matching scenes existing (see
+    poster_notes.md for how this was diagnosed by querying the catalogue
+    directly with curl)."""
+    tile_filter = " or ".join(f"contains(Name,'{tile}')" for tile in TARGET_TILES)
     filter_expr = (
         "Collection/Name eq 'SENTINEL-2' and "
         "contains(Name,'MSIL2A') and "
+        f"({tile_filter}) and "
         f"ContentDate/Start gt {DATE_START} and "
         f"ContentDate/Start lt {DATE_END} and "
         "Attributes/OData.CSC.DoubleAttribute/any("
@@ -121,10 +134,9 @@ def search_products():
         url = payload.get("@odata.nextLink")
         request_params = None  # nextLink already has query params baked in
 
-    matched = [p for p in products if any(tile in p["Name"] for tile in TARGET_TILES)]
-    print(f"Found {len(products)} candidate scenes in date/cloud window, "
-          f"{len(matched)} over the target tiles {sorted(TARGET_TILES)}")
-    return matched
+    print(f"Found {len(products)} scenes over the target tiles {sorted(TARGET_TILES)} "
+          f"in the date/cloud window")
+    return products
 
 
 def download_product(product, access_token, output_dir):
