@@ -18,11 +18,17 @@ data.rar
 # Harbin phase-2 dataset (raw Sentinel-2 scenes + generated tiles/labels;
 # keep on Google Drive for Colab, not in git)
 Haerbing_Dataset/
+Haerbing_Dataset_sepnov/
 excluded_mismatched_tiles/
 Haerbing_processed/
+Haerbing_processed_sepnov/
 Haerbing_ground_truth*/
 Haerbing_ground_truth*.tar
 *.hdf5
+*-history.npy
 
 # Notebook checkpoints
 .ipynb_checkpoints/
+
+# Credentials -- never commit these
+.env.cdse
