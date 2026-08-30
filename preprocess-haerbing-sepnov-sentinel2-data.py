@@ -19,6 +19,7 @@ is a hypothesis to check via the ground-truth QC step, not an assumption.
 
 Run with: venv/bin/python3 preprocess-haerbing-sepnov-sentinel2-data.py
 """
+import gc
 import os
 import re
 import glob
@@ -80,7 +81,12 @@ def band_path(granule_dir, band, resolution):
 
 
 def read_band(path):
-    return rxr.open_rasterio(path).values[0]  # drop the singleton band dim -> (H, W)
+    # Close the underlying GDAL dataset handle explicitly rather than
+    # relying on garbage collection to get to it eventually -- with 5
+    # bands opened per scene across 18 scenes, deferred cleanup was
+    # letting file handles and GDAL's block cache pile up.
+    with rxr.open_rasterio(path) as da:
+        return da.values[0].copy()  # drop the singleton band dim -> (H, W)
 
 
 def load_scene(safe_path):
@@ -159,6 +165,15 @@ def process_all(source_dir=SOURCE_DIR, output_dir=OUTPUT_DIR, max_bad_fraction=M
             manifest.append(record)
 
         print(f"    kept {kept} tiles, discarded {discarded} (cloud/nodata > {max_bad_fraction:.0%})", flush=True)
+
+        # Free this scene's ~3GB of arrays *before* the next iteration's
+        # load_scene() call builds the next scene's arrays -- without this,
+        # Python only rebinds (and frees the old) image/ndvi/scl *after*
+        # the new scene is fully loaded, so both scenes' memory briefly
+        # coexist. That overlap was enough to trigger the OOM killer right
+        # at the scene 1 -> scene 2 boundary.
+        del image, ndvi, scl
+        gc.collect()
 
     os.makedirs(output_dir, exist_ok=True)
     manifest_path = os.path.join(output_dir, "manifest.json")
