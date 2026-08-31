@@ -150,7 +150,15 @@ def generate():
         split_counts[split] += 1
 
         out_name = f"{tile_id}_row{row:02d}_col{col:02d}"
-        np.save(os.path.join(OUTPUT_DIR, split, "images", f"{out_name}.npy"), image.astype(np.float32))
+        # float16, not float32 -- halves the tar size (10GB -> ~5GB) for a
+        # faster Drive upload. Reflectance values here already came from
+        # 16-bit integer DNs divided by 10000, so float16's ~3-decimal-digit
+        # precision loses essentially no meaningful signal at this
+        # magnitude (~0.03-0.15 typical land reflectance). Cast back to
+        # float32 on load in the training notebook -- Keras expects float32
+        # input, so this is a storage/transfer optimisation only, not a
+        # training-precision change.
+        np.save(os.path.join(OUTPUT_DIR, split, "images", f"{out_name}.npy"), image.astype(np.float16))
         np.save(
             os.path.join(OUTPUT_DIR, split, "masks", f"{out_name}.npy"),
             forest_mask.astype(np.uint8).reshape(512, 512, 1),
